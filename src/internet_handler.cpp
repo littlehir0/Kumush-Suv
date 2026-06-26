@@ -4,6 +4,8 @@
 #include <TinyGsmClient.h>
 #include "internet_handler.h"
 
+TinyGsm modem(SerialAT);
+
 String apn[4] = {
     "internet.uzmobile.uz",
     "internet.beeline.uz",
@@ -113,6 +115,9 @@ void initAT(){
 
     // Battery Voltage
     sendAT("AT+CBC", "Supply Voltage");
+
+    sendAT(
+    "AT+CIPSTART=\"TCP\",\"4.tcp.eu.ngrok.io\",\"18914\"", "TCP test", 20000);
 
     Serial.println();
     Serial.println("[MODEM]\tSIM800L diagnostics finished ... ");

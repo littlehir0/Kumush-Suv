@@ -60,9 +60,6 @@ void initAT(){
     SerialAT.begin(115200, SERIAL_8N1, MODEM_RX, MODEM_TX);
     delay(3000);
 
-    SerialAT.begin(115200, SERIAL_8N1, MODEM_RX, MODEM_TX);
-    delay(3000);
-
     // Is modem alive?
     sendAT("AT", "Is alive");
 
@@ -123,26 +120,31 @@ void initAT(){
 
 SimOperator getOperator()
 {
-    SerialAT.println("AT+COPS?");
-    //sendAT("AT+COPS?");
+    SerialAT.println("AT+CIMI");
     delay(1000);
 
-    String op = SerialAT.readString();
+    String imsi;
 
-    Serial.println(op);
+    while (SerialAT.available())
+        imsi += (char)SerialAT.read();
 
-    op.toLowerCase();
+    imsi.trim();
+    Serial.print("IMSI: ");
 
-    if (op.indexOf("uzmobile") >= 0)
+    String code = imsi.substring(0, 5);
+
+    Serial.println(code);
+
+    if (code == "43408")
         return UZMOBILE;
 
-    if (op.indexOf("beeline") >= 0)
+    if (code == "43404")
         return BEELINE;
 
-    if (op.indexOf("ucell") >= 0 || op.indexOf("coscom") >= 0)
+    if (code == "43405")
         return UCELL;
 
-    if (op.indexOf("mobi") >= 0 || op.indexOf("uzdunrobita") >= 0)
+    if (code == "43407")
         return MOBIUZ;
 
     return UNKNOWN;

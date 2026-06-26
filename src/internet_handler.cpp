@@ -72,11 +72,20 @@ void initAT(){
     // Is SIM inserted?
     sendAT("AT+CPIN?", "Is sim inserted?");
 
+    // IMEI
+    sendAT("AT+GSN", "IMEI");
+
     // Signal strength
     sendAT("AT+CSQ", "Signal strength");
 
     // Registered on network?
     sendAT("AT+CREG?", "Registred on network?");
+
+    //Indenifying SIM card
+    sendAT("AT+CCID", "Indenifying SIM card");
+
+    // PDP Context
+    sendAT("AT+CGDCONT?", "APN & PDP Type");
 
     // Which operator?
     //sendAT("AT+COPS?");
@@ -99,8 +108,14 @@ void initAT(){
     // Get IP address
     sendAT("AT+CIFSR", "Get IP address");
 
+    // TCP / IP status
+    sendAT("AT+CIPSTATUS", "TCP / IP Status");
+
     // Check DNS
     sendAT("AT+CDNSGIP=\"google.com\"", "Check DNS", 10000);
+
+    // Battery Voltage
+    sendAT("AT+CBC", "Supply Voltage");
 
     Serial.println();
     Serial.println("[MODEM]\tSIM800L diagnostics finished ... ");

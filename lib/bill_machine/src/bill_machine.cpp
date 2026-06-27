@@ -37,7 +37,7 @@ void BillMachine::updateSignalState(){
 void IRAM_ATTR BillMachine::signalISR(){
     
     uint32_t now = millis();
-    if(lastSignalTime - now >= PULSE_DEBOUNCE_TIME){
+    if(now - lastSignalTime >= PULSE_DEBOUNCE_TIME){
         signalCount++;
         lastSignalTime = now;
     }

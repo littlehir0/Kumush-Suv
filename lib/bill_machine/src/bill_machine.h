@@ -1,9 +1,9 @@
 #ifndef BILL_MACHINE_H
 #define BILL_MACHINE_H
 
-#define PULSE_WEIGHT 500
-#define PULSE_DEBOUNCE_TIME 70
-#define NEW_SIGNAL_THRESHOLD 500
+#define PULSE_WEIGHT            500
+#define PULSE_DEBOUNCE_TIME     70
+#define NEW_SIGNAL_THRESHOLD    500
 
 class BillMachine{
     private:

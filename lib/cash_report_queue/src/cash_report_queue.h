@@ -8,9 +8,9 @@ class RepoQueue{
     private:
     String transaction[QUEUE_CAPASITY];
     uint32_t cash[QUEUE_CAPASITY];
-    uint16_t front;
-    uint16_t tail;
-    uint16_t total;
+    int16_t front;
+    int16_t tail;
+    int16_t total;
 
     public:
     RepoQueue();
@@ -18,7 +18,7 @@ class RepoQueue{
     bool isEmpty();
     bool isFull();
 
-    bool enqueue(int amount, String trans);
+    bool enqueue(uint32_t amount, String trans);
     bool dequeue();
 
     String getTransaction();

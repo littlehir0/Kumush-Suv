@@ -148,13 +148,13 @@ void onMessage(char* topic, byte* payload, unsigned int length){
   DeserializationError err = deserializeJson(in, msg);
 
   if(err){
-    Serial.print("[JSON]\tParse failsed: ");
+    Serial.print("[JSON]\tParse failed: ");
     Serial.println(err.c_str());
     return;
   }
 
-  String deviceUID = in["deviceID"] | "";
-  String transactionUID = in["transactionID"] | "";
+  String deviceUID = in["device_id"] | "";
+  String transactionUID = in["transaction_id"] | "";
   String timestamp = in["timestamp"] | "";
   String status = in["status"] | "";
   uint32_t online_amount = in["online_amount"] | 0;
@@ -176,18 +176,20 @@ void onMessage(char* topic, byte* payload, unsigned int length){
     String receiveTime = modem.getGSMDateTime(DATE_FULL);
 
     StaticJsonDocument<256> res;
-    res["deviceID"] = DEVICE_UID;
-    res["transactionID"] = transactionUID;
+    res["device_id"] = DEVICE_UID;
+    res["transaction_id"] = transactionUID;
     res["timestamp"] = receiveTime;
-    res["status"] = "accepted";
+    res["status"] = "online_accepted";
 
     char buf[256];
     serializeJson(res, buf);
     publishStr(buf, "Confirmation sent");
 
   // Confimation of cash insertion
-  } else if(status == "accepted"){
+  } else if(status == "cash_accepted"){
     Serial.print("[MQTT]\tCash confirmed: ");
+    Serial.println(transactionUID);
+
     isRepoAcked = true;
     ackedTransaction = transactionUID;
   }
@@ -233,14 +235,17 @@ void reportCashInsertion(uint32_t cash, String trasID){
   String receiveTime = modem.getGSMDateTime(DATE_FULL);
   StaticJsonDocument<256> out;
 
-  out["deviceID"] = DEVICE_UID;
-  out["transactionID"] = trasID;
+  out["device_id"] = DEVICE_UID;
+  out["transaction_id"] = trasID;
   out["timestamp"] = receiveTime;
   out["cash_amount"] = cash;
 
   char buf[256];
   serializeJson(out, buf);
   publishStr(buf, "Cash Report sent!");
+
+
+  Serial.println(buf);
 }
 
 void sendHeartBeat(){
@@ -251,7 +256,7 @@ void sendHeartBeat(){
     String tstmp = modem.getGSMDateTime(DATE_FULL);
 
     StaticJsonDocument<256> beat;
-    beat["deviceID"] = DEVICE_UID;
+    beat["device_id"] = DEVICE_UID;
     beat["timestamp"] = tstmp;
     beat["heart_beat"] = "active";
 

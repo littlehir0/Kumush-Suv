@@ -11,7 +11,7 @@ bool RepoQueue::isEmpty(){
     return total == 0;
 }
 
-bool RepoQueue::enqueue(int amount, String trans){
+bool RepoQueue::enqueue(uint32_t amount, String trans){
     if(isFull()){
         Serial.println("[QUEUE]\tQueue is full");
         return false;
@@ -29,17 +29,14 @@ bool RepoQueue::dequeue(){
         Serial.println("[QUEUE]\tQueue is emptry");
         return false;
     }
-
+    
+    front = (front + 1) % QUEUE_CAPASITY;
+    total--;
+    
     if (total == 0) {
         front = 0;
         tail = -1;
     }
-
-    Serial.println(getTransaction());
-
-    front = (front + 1) % QUEUE_CAPASITY;
-    total--;
-
 
     return true;
 }

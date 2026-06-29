@@ -22,16 +22,17 @@ void setup() {
 
 void loop() {
   int num = 0;
-  int now = millis();
+  uint32_t now = millis();
   mqttLoop();
   bm.updateSignalState();
   sendHeartBeat();
 
   if (bm.isNewSignalArrived()) {
     num = bm.getSignalCount();
-
     String temp = String(now);
-    //queue.enqueue(num * SIGNAL_WEIGHT, temp);
+
+    queue.enqueue(num * SIGNAL_WEIGHT, temp);
+
   }
   if(isOnlinePaymentArrived()){
     num = getNewOnlinePayment() / SIGNAL_WEIGHT;
@@ -45,11 +46,13 @@ void loop() {
     resetNewPayment();
   }
 
-  /*if(now - lastReportAttempt >= CASH_REPORT_DELAY && !queue.isEmpty()){
+  if(now - lastReportAttempt >= CASH_REPORT_DELAY && !queue.isEmpty()){
+    lastReportAttempt = now;
     reportCashInsertion(queue.getCash(), queue.getTransaction());
   }
-  if(getAckedStatus() || getAckedTransaction() == queue.getTransaction()){
+
+  if(!queue.isEmpty() && (getAckedStatus() || getAckedTransaction() == queue.getTransaction())){
     queue.dequeue();
     resetAckedStatus();
-  }*/
+  }
 }

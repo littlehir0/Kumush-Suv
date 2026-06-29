@@ -4,10 +4,12 @@
 #define SIGNAL_IN_PIN 13
 #define BILL_EN_PIN 32
 #define SIGNAL_OUT_PIN 21
+#define MAINBOARD_EN_PIN 22
 
 #define SIGNAL_WEIGHT 500
 #define CASH_REPORT_DELAY 1000
 #define HEART_BEAT_DELAY 5000
+#define STATE_REPORT_DELAY 1000
 
 #define DEVICE_UID "water001"
 #define LOGS 1

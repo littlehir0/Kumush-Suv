@@ -42,15 +42,20 @@ bool mqttReconnect();
 void onMessage(char* topic, byte* payload, unsigned int length);
 void mqttLoop();
 
-extern bool isRepoAcked;
-extern String ackedTransaction;
+extern bool isCashRepoAcked;
+extern String cashAckedTransaction;
 
-bool getAckedStatus();
-String getAckedTransaction();
-void resetAckedStatus();
+bool getCashAckedStatus();
+String getCashAckedTransaction();
+void resetCashAckedStatus();
 
 void reportCashInsertion(uint32_t cash, String trasID);
 
 extern uint32_t lastHeartBeat;
 void sendHeartBeat();
 
+extern bool busyAcked;
+extern bool idleAcked;
+void sendBusyMsg(bool busy = true);
+bool isBusyAcked();
+bool isIdleAcked();

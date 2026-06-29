@@ -27,8 +27,11 @@ String balanceCode[4] = {
 bool IsNewPayment = false;
 uint32_t newPaymentAmount = 0;
 uint32_t lastHeartBeat = 0;
-String ackedTransaction = "";
-bool isRepoAcked = false;
+String cashAckedTransaction = "";
+bool isCashRepoAcked = false;
+
+bool busyAcked = false;
+bool idleAcked = false;
 
 void serverInit(){
 
@@ -158,6 +161,7 @@ void onMessage(char* topic, byte* payload, unsigned int length){
   String timestamp = in["timestamp"] | "";
   String status = in["status"] | "";
   uint32_t online_amount = in["online_amount"] | 0;
+  bool busy = in["busy"] | false;
 
   // When ONLINE PAYMENT preformed
   if(online_amount > 0){
@@ -190,8 +194,15 @@ void onMessage(char* topic, byte* payload, unsigned int length){
     Serial.print("[MQTT]\tCash confirmed: ");
     Serial.println(transactionUID);
 
-    isRepoAcked = true;
-    ackedTransaction = transactionUID;
+    isCashRepoAcked = true;
+    cashAckedTransaction = transactionUID;
+  } else if(status == "busy_accepted"){
+    if(busy){
+      busyAcked = true;
+    } else {
+      idleAcked = true;
+    }
+    
   }
 }
 
@@ -245,7 +256,7 @@ void reportCashInsertion(uint32_t cash, String trasID){
   publishStr(buf, "Cash Report sent!");
 
 
-  Serial.println(buf);
+  //Serial.println(buf);
 }
 
 void sendHeartBeat(){
@@ -266,13 +277,41 @@ void sendHeartBeat(){
   }
 }
 
-bool getAckedStatus(){
-  return isRepoAcked;
+bool getCashAckedStatus(){
+  return isCashRepoAcked;
 }
-String getAckedTransaction(){
-  return ackedTransaction;
+String getCashAckedTransaction(){
+  return cashAckedTransaction;
 }
-void resetAckedStatus(){
-  isRepoAcked = false;
-  ackedTransaction = "";
+void resetCashAckedStatus(){
+  isCashRepoAcked = false;
+  cashAckedTransaction = "";
+}
+
+void sendBusyMsg(bool busy){
+  String tstmp = modem.getGSMDateTime(DATE_FULL);
+
+  StaticJsonDocument<256> hold;
+  hold["device_id"] = DEVICE_UID;
+  hold["timestamp"] = tstmp;
+  hold["busy"] = busy;
+
+  char buf[256];
+  serializeJson(hold, buf);
+  String msg = "Busy message sent: ";
+
+  if(busy){
+    msg += "busy";
+  } else {
+    msg += "active";
+  }
+
+  publishStr(buf, msg);
+}
+
+bool isBusyAcked(){
+  return busyAcked;
+}
+bool isIdleAcked(){
+  return idleAcked;
 }

@@ -12,7 +12,6 @@
 #define MODEM_TX       27
 #define MODEM_RX       26
 
-#define APN "internet"
 #define GPRS_USER ""
 #define GPRS_PASS ""
 
@@ -27,8 +26,31 @@ enum SimOperator {
 extern String apn[4];
 extern String balanceCode[4];
 
+extern bool IsNewPayment;
+extern uint32_t newPaymentAmount;
+
+bool isOnlinePaymentArrived();
+uint32_t getNewOnlinePayment();
+void resetNewPayment();
+
 void serverInit();
 void serverConnect();
-void publishStr(const char* text);
+void publishStr(const char* text, String purpose = "");
 SimOperator getOperator();
+
+bool mqttReconnect();
+void onMessage(char* topic, byte* payload, unsigned int length);
+void mqttLoop();
+
+extern bool isRepoAcked;
+extern String ackedTransaction;
+
+bool getAckedStatus();
+String getAckedTransaction();
+void resetAckedStatus();
+
+void reportCashInsertion(uint32_t cash, String trasID);
+
+extern uint32_t lastHeartBeat;
+void sendHeartBeat();
 

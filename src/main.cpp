@@ -2,10 +2,14 @@
 #include "bill_machine.h"
 #include "signal_generator.h"
 #include "server_handler.h"
+#include "cash_report_queue.h"
 #include <TinyGsmClient.h>
 #include <PubSubClient.h>
 
 BillMachine bm(true);
+RepoQueue queue;
+
+uint32_t lastReportAttempt = 0;
 
 void setup() {
   Serial.begin(115200);
@@ -17,22 +21,35 @@ void setup() {
 }
 
 void loop() {
-  delay(5000);
-
-  uint32_t time = millis();
-  publishStr(String(time).c_str());
-
+  int num = 0;
+  int now = millis();
+  mqttLoop();
   bm.updateSignalState();
+  sendHeartBeat();
 
   if (bm.isNewSignalArrived()) {
-    int num = bm.getSignalCount();
-    Serial.print("Generating: ");
-    Serial.println(num);
+    num = bm.getSignalCount();
 
+    String temp = String(now);
+    //queue.enqueue(num * SIGNAL_WEIGHT, temp);
+  }
+  if(isOnlinePaymentArrived()){
+    num = getNewOnlinePayment() / SIGNAL_WEIGHT;
+  }
+  if(num){
     bm.disable();
     generatePulses(num);
     bm.enable();
 
     bm.resetCount();
+    resetNewPayment();
   }
+
+  /*if(now - lastReportAttempt >= CASH_REPORT_DELAY && !queue.isEmpty()){
+    reportCashInsertion(queue.getCash(), queue.getTransaction());
+  }
+  if(getAckedStatus() || getAckedTransaction() == queue.getTransaction()){
+    queue.dequeue();
+    resetAckedStatus();
+  }*/
 }

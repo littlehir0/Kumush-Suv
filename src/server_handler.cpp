@@ -3,6 +3,7 @@
 #include <Arduino.h>
 #include <TinyGsmClient.h>
 #include <PubSubClient.h>
+#include <ArduinoJson.h>
 #include "server_handler.h"
 
 TinyGsm modem(SerialAT);
@@ -23,73 +24,250 @@ String balanceCode[4] = {
     "*100#"
 };
 
+bool IsNewPayment = false;
+uint32_t newPaymentAmount = 0;
+uint32_t lastHeartBeat = 0;
+String ackedTransaction = "";
+bool isRepoAcked = false;
+
 void serverInit(){
-    pinMode(MODEM_POWER_ON, OUTPUT);
-    digitalWrite(MODEM_POWER_ON, HIGH);
 
-    pinMode(MODEM_PWKEY, OUTPUT);
-    digitalWrite(MODEM_PWKEY, LOW);
-    delay(1000);
-    digitalWrite(MODEM_PWKEY, HIGH);
+  pinMode(MODEM_POWER_ON, OUTPUT);
+  digitalWrite(MODEM_POWER_ON, HIGH);
 
-    SerialAT.begin(115200, SERIAL_8N1, MODEM_RX, MODEM_TX);
-    delay(3000);
+  pinMode(MODEM_PWKEY, OUTPUT);
+  digitalWrite(MODEM_PWKEY, LOW);
+  delay(1000);
+  digitalWrite(MODEM_PWKEY, HIGH);
+
+  SerialAT.begin(115200, SERIAL_8N1, MODEM_RX, MODEM_TX);
+  delay(3000);
 
 }
 void serverConnect(){
-    Serial.println("\n[MODEM]\tStarting modem...");
-    modem.restart();
+  Serial.println("\n[MODEM]\tStarting modem...");
+  modem.restart();
 
-    Serial.println("[MODEM]\tConnecting to network...");
-    if (!modem.waitForNetwork()) {
-      Serial.println("[MODEM]\tNetwork failed!");
-      while (1);
-    }
+  Serial.print("\t|__ Modem Info: ");
+  Serial.println(modem.getModemInfo());
 
-    Serial.println("[MODEM]\tConnecting to GPRS...");
-    if (!modem.gprsConnect(APN, GPRS_USER, GPRS_PASS)) {
-      Serial.println("[MODEM]\tGPRS failed!");
-      while (1);
-    }
-    Serial.println("[MODEM]\tGPRS connected!");
+  Serial.print("\t|__ SIM Status: ");
+  Serial.println(modem.getSimStatus());
 
-    mqtt.setServer(MQTT_SERVER, MQTT_PORT);
 
-    Serial.println("[MODEM]\tConnecting to MQTT...");
+  Serial.println("[MODEM]\tConnecting to network...");
+  if (!modem.waitForNetwork()) {
+    Serial.println("[MODEM]\tNetwork failed!");
+    while (1);
+  }
 
-    if (mqtt.connect(DEVICE_UID)) {
-      Serial.println("[MODEM]\tMQTT connected!");
-    } else {
-      Serial.print("[MODEM]\tMQTT failed, rc=");
-      Serial.println(mqtt.state());
-    }
+  Serial.println("[MODEM]\tNetwork OK");
+  Serial.print("\t|__ Operator: ");
+  Serial.println(modem.getOperator());
 
+  Serial.print("\t|__ Signal: ");
+  Serial.println(modem.getSignalQuality());
+
+  Serial.print("\t|__ Time: ");
+  Serial.println(modem.getGSMDateTime(DATE_FULL));
+
+  modem.sendAT("+CBC");
+  if (modem.waitResponse(5000L) == 1)
+    Serial.println("\t|__ Battery query OK");
+
+  modem.sendAT("+CCID");
+  if (modem.waitResponse(5000L) == 1)
+    Serial.println("\t|__ ICCID query OK");
+
+  modem.sendAT("+CIMI");
+  if (modem.waitResponse(5000L) == 1)
+    Serial.println("\t|__ IMSI query OK");
+
+  SimOperator op = getOperator();
+
+  Serial.print("\t|__ Detected APN: ");
+  Serial.println(apn[op]);
+
+  Serial.println("[MODEM]\tConnecting to GPRS...");
+  if (!modem.gprsConnect(apn[op].c_str(), GPRS_USER, GPRS_PASS)) {
+    Serial.println("[MODEM]\tGPRS failed!");
+    while (1);
+  }
+  Serial.println("[MODEM]\tGPRS connected!");
+
+  mqtt.setServer(MQTT_SERVER, MQTT_PORT);
+  mqtt.setCallback(onMessage);
+
+  Serial.println("[MODEM]\tConnecting to MQTT...");
+
+  /*if (mqtt.connect(DEVICE_UID)) {
+    Serial.println("[MODEM]\tMQTT connected!");
+  } else {
+    Serial.print("[MODEM]\tMQTT failed, rc=");
+    Serial.println(mqtt.state());
+  }*/
+
+  mqttReconnect();
 }
-void publishStr(const char* text){
-    if (mqtt.connect(DEVICE_UID)) {
+void publishStr(const char* text, String purpose){
+  if (mqtt.connected()) {
 
-      mqtt.publish(MQTT_TOPIC, text);
-      Serial.println("[MODEM]\tMessage sent.");
+    mqtt.publish(MQTT_TOPIC, text);
+    Serial.print("[MQTT]\t");
+    Serial.println(purpose);
 
-    } else {
-      Serial.print("[MODEM]\tMQTT failed, rc=");
-      Serial.println(mqtt.state());
-    }
-
+  } else {
+    Serial.print("[MQTT]\tMQTT failed, rc=");
+    Serial.println(mqtt.state());
+  }
 }
 
 SimOperator getOperator() {
-    String imsi = modem.getIMSI();
-    imsi.trim();
-    Serial.print("[MODEM]\tIMSI: ");
-    Serial.println(imsi);
+  String imsi = modem.getIMSI();
+  imsi.trim();
+  Serial.print("\t|__ IMSI: ");
+  Serial.println(imsi);
 
-    String code = imsi.substring(0, 5);
+  String code = imsi.substring(0, 5);
 
-    if (code == "43408") return UZMOBILE;
-    if (code == "43404") return BEELINE;
-    if (code == "43405") return UCELL;
-    if (code == "43407") return MOBIUZ;
+  if (code == "43408") return UZMOBILE;
+  if (code == "43404") return BEELINE;
+  if (code == "43405") return UCELL;
+  if (code == "43407") return MOBIUZ;
 
-    return UNKNOWN;
+  return UNKNOWN;
+}
+
+void onMessage(char* topic, byte* payload, unsigned int length){
+  String msg;
+  for(uint32_t i=0; i < length; i++)
+    msg += (char)payload[i];
+
+
+  StaticJsonDocument<256> in;
+  DeserializationError err = deserializeJson(in, msg);
+
+  if(err){
+    Serial.print("[JSON]\tParse failsed: ");
+    Serial.println(err.c_str());
+    return;
+  }
+
+  String deviceUID = in["deviceID"] | "";
+  String transactionUID = in["transactionID"] | "";
+  String timestamp = in["timestamp"] | "";
+  String status = in["status"] | "";
+  uint32_t online_amount = in["online_amount"] | 0;
+
+  // When ONLINE PAYMENT preformed
+  if(online_amount > 0){
+    Serial.println("[PYMNT]\tOnline payment received");
+    Serial.print("\t|__ TransactionUID: ");
+    Serial.println(transactionUID);
+    Serial.print("\t|__ Timestamp: ");
+    Serial.println(timestamp);
+    Serial.print("\t|__ Amount: ");
+    Serial.println(online_amount);
+
+    //Triggers for billmachine
+    IsNewPayment = true;
+    newPaymentAmount = online_amount;
+
+    String receiveTime = modem.getGSMDateTime(DATE_FULL);
+
+    StaticJsonDocument<256> res;
+    res["deviceID"] = DEVICE_UID;
+    res["transactionID"] = transactionUID;
+    res["timestamp"] = receiveTime;
+    res["status"] = "accepted";
+
+    char buf[256];
+    serializeJson(res, buf);
+    publishStr(buf, "Confirmation sent");
+
+  // Confimation of cash insertion
+  } else if(status == "accepted"){
+    Serial.print("[MQTT]\tCash confirmed: ");
+    isRepoAcked = true;
+    ackedTransaction = transactionUID;
+  }
+}
+
+bool isOnlinePaymentArrived(){
+  return IsNewPayment;
+}
+uint32_t getNewOnlinePayment(){
+  return newPaymentAmount;
+}
+
+void resetNewPayment(){
+  IsNewPayment = false;
+  newPaymentAmount = 0;
+}
+
+bool mqttReconnect(){
+  Serial.println("[MQTT]\tConnecting...");  
+  
+  if (mqtt.connect(DEVICE_UID)) {
+    Serial.println("[MQTT]\tConnected!");
+    mqtt.subscribe(MQTT_TOPIC);
+    Serial.print("[MQTT]\tSubscribed to: ");
+    Serial.println(MQTT_TOPIC);
+    return true;
+  }
+  Serial.print("[MQTT]\tFailed, rc=");
+  Serial.println(mqtt.state());
+  
+  return false;
+}
+
+void mqttLoop(){
+  if (!mqtt.connected()) {
+    Serial.println("[MQTT]\tConnection lost, reconnecting...");
+    mqttReconnect();
+  }
+  mqtt.loop();
+}
+
+void reportCashInsertion(uint32_t cash, String trasID){
+  String receiveTime = modem.getGSMDateTime(DATE_FULL);
+  StaticJsonDocument<256> out;
+
+  out["deviceID"] = DEVICE_UID;
+  out["transactionID"] = trasID;
+  out["timestamp"] = receiveTime;
+  out["cash_amount"] = cash;
+
+  char buf[256];
+  serializeJson(out, buf);
+  publishStr(buf, "Cash Report sent!");
+}
+
+void sendHeartBeat(){
+  uint32_t now = millis();
+  if(now - lastHeartBeat >= HEART_BEAT_DELAY){
+    lastHeartBeat = now;
+
+    String tstmp = modem.getGSMDateTime(DATE_FULL);
+
+    StaticJsonDocument<256> beat;
+    beat["deviceID"] = DEVICE_UID;
+    beat["timestamp"] = tstmp;
+    beat["heart_beat"] = "active";
+
+    char buf[256];
+    serializeJson(beat, buf);
+    publishStr(buf, "Heart beat sent");
+  }
+}
+
+bool getAckedStatus(){
+  return isRepoAcked;
+}
+String getAckedTransaction(){
+  return ackedTransaction;
+}
+void resetAckedStatus(){
+  isRepoAcked = false;
+  ackedTransaction = "";
 }

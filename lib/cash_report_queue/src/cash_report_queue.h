@@ -2,9 +2,9 @@
 #define CASH_REPORT_QUEUE_H
 #include <Arduino.h>
 
-#define QUEUE_CAPASITY 10
+#define QUEUE_CAPASITY 15
 
-class RepoQueue{
+class RepoQueue{  
     private:
     String transaction[QUEUE_CAPASITY];
     uint32_t cash[QUEUE_CAPASITY];

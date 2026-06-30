@@ -15,14 +15,21 @@ uint32_t lastStateReportAttempt = 0;
 
 void setup() {
   Serial.begin(115200);
+  
+  Serial.print("Reset reason:");
+  Serial.println(esp_reset_reason());
 
   bm.init();
+  bm.disable();
+
   initPulseGeneratorPin();
 
   holdInit();
 
   serverInit();
   serverConnect();
+
+  bm.enable();
 }
 
 void loop() {
@@ -85,6 +92,6 @@ void loop() {
       busyAcked = false;
     }
 
-    //bm.enable();
+    bm.enable();
   }
 }

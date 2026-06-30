@@ -29,9 +29,9 @@ void BillMachine::updateSignalState(){
         gotNewSignal = true;
     }
 
-    if(signalCount > 0){
+    /*if(signalCount > 0){
         disable();
-    }
+    }*/
 }
 
 void IRAM_ATTR BillMachine::signalISR(){

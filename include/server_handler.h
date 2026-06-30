@@ -3,6 +3,9 @@
 #include <Arduino.h>
 
 #define TINY_GSM_MODEM_SIM800
+#define SERVER_RECONNECT_DELAY 30000
+
+extern uint32_t lastServerConnect;
 
 #define SerialAT Serial1
 

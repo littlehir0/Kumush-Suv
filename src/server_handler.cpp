@@ -49,7 +49,7 @@ void serverInit(){
 
 }
 void serverConnect(){
-  Serial.println("\n[MODEM]\tStarting modem...");
+  Serial.println("[MODEM]\tStarting modem...");
   modem.restart();
 
   Serial.print("\t|__ Modem Info: ");
@@ -91,6 +91,15 @@ void serverConnect(){
 
   Serial.print("\t|__ Detected APN: ");
   Serial.println(apn[op]);
+
+  Serial.print("\t|__ Internet: ");
+
+  if(gsmClient.connect("google.com", 80)) {
+    Serial.println("OK");
+    gsmClient.stop();
+  } else {
+    Serial.println("CANNOT REACH");
+  }
 
   Serial.println("[MODEM]\tConnecting to GPRS...");
   if (!modem.gprsConnect(apn[op].c_str(), GPRS_USER, GPRS_PASS)) {
@@ -220,6 +229,7 @@ void resetNewPayment(){
 
 bool mqttReconnect(){
   if(!mqtt.connected() && millis() - lastServerConnect >= SERVER_RECONNECT_DELAY){
+
     Serial.println("[MQTT]\tReconnecting...");  
     lastServerConnect = millis();
 
@@ -264,8 +274,6 @@ void reportCashInsertion(uint32_t cash, String trasID){
     serializeJson(out, buf);
     publishStr(buf, "Cash Report sent!");
 
-
-    //Serial.println(buf);
   }
   
 }

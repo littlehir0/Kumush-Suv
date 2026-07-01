@@ -20,7 +20,7 @@ void BillMachine::init(){
     attachInterrupt(digitalPinToInterrupt(SIGNAL_IN_PIN), BillMachine::signalISR, FALLING);
 
     if(LOGS){
-        Serial.println("[BILL_MACHINE] Bill Machine starting ...");
+        Serial.println("\n[BILL_MACHINE] Bill Machine starting ...");
     }
 }
 
@@ -28,10 +28,6 @@ void BillMachine::updateSignalState(){
     if(millis() - lastSignalTime >= NEW_SIGNAL_THRESHOLD && !gotNewSignal && signalCount != 0){
         gotNewSignal = true;
     }
-
-    /*if(signalCount > 0){
-        disable();
-    }*/
 }
 
 void IRAM_ATTR BillMachine::signalISR(){

@@ -6,5 +6,5 @@ void holdInit(){
 }
 
 bool isHoldTriggered(){
-    return digitalRead(MAINBOARD_EN_PIN) == 0;
+    return digitalRead(MAINBOARD_EN_PIN) == 1 ;
 }

@@ -24,4 +24,4 @@
 
 #define MQTT_SERVER "6.tcp.eu.ngrok.io"
 #define MQTT_TOPIC "vending_machine_topic"
-#define MQTT_PORT 20409
+#define MQTT_PORT 25411  

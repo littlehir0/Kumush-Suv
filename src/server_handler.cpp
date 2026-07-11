@@ -59,13 +59,13 @@ void serverConnect(){
   Serial.println(modem.getSimStatus());
 
 
-  Serial.println("[MODEM]\tConnecting to network...");
+  Serial.print("[MODEM]\tConnecting to network ... ");
   if (!modem.waitForNetwork()) {
-    Serial.println("[MODEM]\tNetwork failed!");
+    Serial.println("failed!");
     //while (1);
   }
 
-  Serial.println("[MODEM]\tNetwork OK");
+  Serial.println("OK");
   Serial.print("\t|__ Operator: ");
   Serial.println(modem.getOperator());
 
@@ -92,21 +92,19 @@ void serverConnect(){
   Serial.print("\t|__ Detected APN: ");
   Serial.println(apn[op]);
 
-  Serial.print("\t|__ Internet: ");
-
-  if(gsmClient.connect("google.com", 80)) {
-    Serial.println("OK");
-    gsmClient.stop();
-  } else {
-    Serial.println("CANNOT REACH");
-  }
-
   Serial.println("[MODEM]\tConnecting to GPRS...");
   if (!modem.gprsConnect(apn[op].c_str(), GPRS_USER, GPRS_PASS)) {
     Serial.println("[MODEM]\tGPRS failed!");
     while (1);
   }
   Serial.println("[MODEM]\tGPRS connected!");
+
+  Serial.print("\t|__ IP: ");
+  Serial.println(modem.localIP());
+
+  Serial.print("\t|__ Internet: ");
+
+  if(gsmClient.connect("google.com", 80)) { Serial.println("OK"); gsmClient.stop(); } else { Serial.println("CANNOT REACH"); }
 
   mqtt.setServer(MQTT_SERVER, MQTT_PORT);
   mqtt.setCallback(onMessage);

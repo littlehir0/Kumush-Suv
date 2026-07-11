@@ -26,7 +26,7 @@ void setup() {
 
   holdInit();
  
-  serverInit();
+  serverInit();       
   serverConnect();
 
   bm.enable();
@@ -39,7 +39,7 @@ void loop() {
   mqttLoop();
   bm.updateSignalState();
   sendHeartBeat();
-
+            
   if(!isHoldTriggered()){
     // Signal came from BILL MACHINE
     if (bm.isNewSignalArrived()) {

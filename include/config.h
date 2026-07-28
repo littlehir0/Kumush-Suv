@@ -1,10 +1,10 @@
 #pragma once
 #include <Arduino.h>
 
-#define SIGNAL_IN_PIN 13
-#define BILL_EN_PIN 32
-#define SIGNAL_OUT_PIN 21
-#define MAINBOARD_EN_PIN 19
+#define SIGNAL_IN_PIN       13
+#define BILL_EN_PIN         10
+#define SIGNAL_OUT_PIN      21
+#define MAINBOARD_EN_PIN    14
 
 /*
 #define MODEM_RST      5

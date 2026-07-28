@@ -36,8 +36,8 @@ bool idleAcked = false;
 
 void serverInit(){
 
-  pinMode(MODEM_POWER_ON, OUTPUT);
-  digitalWrite(MODEM_POWER_ON, HIGH);
+  //pinMode(MODEM_POWER_ON, OUTPUT);
+  //digitalWrite(MODEM_POWER_ON, HIGH);
 
   pinMode(MODEM_PWKEY, OUTPUT);
   digitalWrite(MODEM_PWKEY, LOW);

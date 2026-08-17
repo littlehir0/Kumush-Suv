@@ -1,0 +1,64 @@
+#pragma once
+#include "config.h"
+#include <Arduino.h>
+
+#define TINY_GSM_MODEM_SIM800
+#define SERVER_RECONNECT_DELAY 30000
+
+extern uint32_t lastServerConnect;
+
+#define SerialAT Serial1
+
+//#define MODEM_RST      5
+#define MODEM_PWKEY    47
+//#define MODEM_POWER_ON 23
+#define MODEM_TX       17
+#define MODEM_RX       18
+
+#define GPRS_USER ""
+#define GPRS_PASS ""
+
+enum SimOperator {
+    UZMOBILE = 0,
+    BEELINE,
+    UCELL,
+    MOBIUZ,
+    UNKNOWN
+};
+
+extern String apn[4];
+extern String balanceCode[4];
+
+extern bool IsNewPayment;
+extern uint32_t newPaymentAmount;
+
+bool isOnlinePaymentArrived();
+uint32_t getNewOnlinePayment();
+void resetNewPayment();
+
+void serverInit();
+void serverConnect();
+void publishStr(const char* text, String purpose = "");
+SimOperator getOperator();
+
+bool mqttReconnect();
+void onMessage(char* topic, byte* payload, unsigned int length);
+void mqttLoop();
+
+extern bool isCashRepoAcked;
+extern String cashAckedTransaction;
+
+bool getCashAckedStatus();
+String getCashAckedTransaction();
+void resetCashAckedStatus();
+
+void reportCashInsertion(uint32_t cash, String trasID);
+
+extern uint32_t lastHeartBeat;
+void sendHeartBeat();
+
+extern bool busyAcked;
+extern bool idleAcked;
+void sendBusyMsg(bool busy = true);
+bool isBusyAcked();
+bool isIdleAcked();

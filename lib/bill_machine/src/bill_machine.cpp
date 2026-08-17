@@ -20,7 +20,7 @@ void BillMachine::init(){
     attachInterrupt(digitalPinToInterrupt(SIGNAL_IN_PIN), BillMachine::signalISR, FALLING);
 
     if(LOGS){
-        Serial.println("Bill Machine starting ...");
+        Serial.println("\n[BILL_MACHINE] Bill Machine starting ...");
     }
 }
 
@@ -28,16 +28,12 @@ void BillMachine::updateSignalState(){
     if(millis() - lastSignalTime >= NEW_SIGNAL_THRESHOLD && !gotNewSignal && signalCount != 0){
         gotNewSignal = true;
     }
-
-    if(signalCount > 0){
-        disable();
-    }
 }
 
 void IRAM_ATTR BillMachine::signalISR(){
     
     uint32_t now = millis();
-    if(lastSignalTime - now >= PULSE_DEBOUNCE_TIME){
+    if(now - lastSignalTime >= PULSE_DEBOUNCE_TIME){
         signalCount++;
         lastSignalTime = now;
     }
@@ -49,7 +45,7 @@ void BillMachine::enable(){
         digitalWrite(BILL_EN_PIN, LOW);
         isEn = true;
         if(LOGS){
-            Serial.println("Bill Machine ENABLED");
+            Serial.println("[BILL_MACHINE] Bill Machine ENABLED");
         }
     }
 }
@@ -58,7 +54,7 @@ void BillMachine::disable(){
         digitalWrite(BILL_EN_PIN, HIGH);
         isEn = false;
         if(LOGS){
-            Serial.println("Bill Machine DISABLED");
+            Serial.println("[BILL_MACHINE] Bill Machine DISABLED");
         }
     }
 }
